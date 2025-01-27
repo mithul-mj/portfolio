@@ -1,0 +1,91 @@
+/* General styles */
+.outer-container {
+    display: flex;
+    flex-wrap: wrap; /* Allows children to wrap in smaller screens */
+    height: fit-content; /* Adjust height based on content */
+    padding: 30px;
+    background-color: black;
+  }
+  
+  /* Image div styles */
+  .image-div {
+    background-image: url(jc.png);
+    background-position: top;
+    background-size: cover;
+    background-repeat: no-repeat;
+    width: 400px;
+    height: 400px;
+    background-color: rgb(147, 169, 107);
+    border-radius: 20px;
+  }
+  
+  /* Content div styles */
+  .content-div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+  }
+  
+  .top-content {
+    background-color: rgb(147, 169, 107);
+    border-radius: 20px 0 0 20px;
+    flex: 1; /* Takes up available space */
+  }
+  .aboutme {
+    font-weight: 800;
+    font-size: 12px;
+    display: block; /* Ensure this spans a new line */
+  }
+  .whoami {
+    font-size: 30px;
+    display: block; /* Ensure this spans a new line */
+  }
+  
+  .bottom-content {
+    background-color: rgb(147, 169, 107);
+    border-radius: 0 20px 20px 0;
+    flex: 3; /* Takes up 3 times the space of the top content */
+    padding: 10px;
+  }
+  
+  .mid-div {
+    margin-right: 30px;
+    
+    flex: 1; /* Ensures consistent sizing */
+    border-radius: 20px;
+  }
+  
+  /* Media query for mobile view */
+  @media (max-width: 768px) {
+    .outer-container {
+      flex-direction: column; /* Stacks all children vertically */
+    }
+  
+    .mid-div {
+      order: 1;
+      
+    }
+  
+    .top-content {
+      order: 0; /* Ensures it stays on top */
+    }
+  
+    .bottom-content {
+      order: 2; /* Ensures it stays at the bottom */
+    }
+  
+    .image-div {
+      width: 250px; /* Make image div responsive */
+      height: 250px; /* Adjust height for small screens */
+    }
+  
+    .content-div {
+      border-radius: 20px;
+    }
+    .outer-container{
+        gap: 20px;
+        
+    }
+  }
+ 

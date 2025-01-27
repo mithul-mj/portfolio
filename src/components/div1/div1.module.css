@@ -1,0 +1,48 @@
+.div1 {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    max-width: 100vw;
+    height: 100vh;
+    background-color: rgb(147, 169, 107);
+    font-family: "Barlow Condensed", serif;
+    font-weight: 600;
+}
+
+.textdiv {
+    flex: 1;    
+    min-width: 300px;
+    padding-left: 10vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.imgdiv {
+    flex: 2;
+    min-width: 250px;
+    min-height: 60vh;
+    background: url(jc.png) top / cover no-repeat ; /* Combines background properties */
+}
+
+.hello {
+    font-size: 70px;
+}
+
+.myname {
+    font-size: 40px;
+}
+
+.description {
+    font-size: 20px;
+}
+
+.downloadbtn {
+    color: white;
+    background-color: rgb(29, 155, 29);
+    border: none; /* Simplifies border reset */
+    width: 150px;
+    height: 30px;
+}
