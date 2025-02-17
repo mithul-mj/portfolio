@@ -1,0 +1,93 @@
+{% if user.is_authenticated %}
+    <p>Welcome, {{ user.username }} | <a href="{% url 'logout' %}">Logout</a></p>
+{% endif %}
+
+<p id="countdown"></p>
+<p id="paragraph" style="display: none;"></p>
+<textarea id="user_input" oninput="checkTyping()" disabled></textarea>
+<button onclick="submitTest()" disabled id="submit_button">Submit</button>
+<p id="error_message" style="color: red; display: none;"></p>
+
+<!-- Hidden form -->
+<form id="typingForm" method="post" action="{% url 'result' %}">
+    {% csrf_token %}
+    <input type="hidden" name="paragraph_id" value="{{ paragraph.id }}">
+    <input type="hidden" name="user_input" id="hidden_input">
+    <input type="hidden" name="start_time" id="start_time">
+</form>
+
+<script>
+    let originalText = "{{ paragraph.text }}";
+    let paragraphContainer = document.getElementById("paragraph");
+    let startTime = new Date("{{ start_time }}").getTime();
+    let userInput = document.getElementById("user_input");
+    let submitButton = document.getElementById("submit_button");
+    let countdownElem = document.getElementById("countdown");
+    let errorMessage = document.getElementById("error_message");
+
+    // Wrap each letter in a span
+    paragraphContainer.innerHTML = originalText.split("").map(char => `<span>${char}</span>`).join("");
+
+    function updateCountdown() {
+        let now = new Date().getTime();
+        let timeLeft = startTime - now;
+
+        if (timeLeft > 0) {
+            let seconds = Math.floor((timeLeft / 1000) % 60);
+            let minutes = Math.floor((timeLeft / 1000 / 60) % 60);
+            countdownElem.innerText = `Race starts in: ${minutes}m ${seconds}s`;
+            setTimeout(updateCountdown, 1000);
+        } else {
+            countdownElem.style.display = "none";
+            paragraphContainer.style.display = "block";
+            userInput.disabled = false;
+            submitButton.disabled = false;
+            document.getElementById("start_time").value = new Date().getTime() / 1000;
+        }
+    }
+    updateCountdown();
+
+    function checkTyping() {
+        let inputValue = userInput.value;
+        let spans = paragraphContainer.getElementsByTagName("span");
+        let errorOccurred = false;
+
+        for (let i = 0; i < spans.length; i++) {
+            if (i < inputValue.length) {
+                if (!errorOccurred && inputValue[i] === originalText[i]) {
+                    spans[i].style.backgroundColor = "lightgreen";
+                } else {
+                    spans[i].style.backgroundColor = "lightcoral";
+                    errorOccurred = true;
+                }
+            } else {
+                spans[i].style.backgroundColor = "";
+            }
+        }
+
+        // Length check
+        if (inputValue.length > originalText.length) {
+            errorMessage.innerText = "You typed more than the given text!";
+            errorMessage.style.display = "block";
+            errorOccurred = true;
+        } else if (inputValue.length < originalText.length) {
+            errorMessage.innerText = "Your input is incomplete!";
+            errorMessage.style.display = "block";
+            errorOccurred = true;
+        } else {
+            errorMessage.style.display = "none";
+        }
+
+        submitButton.disabled = errorOccurred;
+        return !errorOccurred;
+    }
+
+    function submitTest() {
+        if (checkTyping()) {
+            document.getElementById("hidden_input").value = userInput.value;
+            document.getElementById("typingForm").submit();
+        } else {
+            alert("Fix all errors before submitting!");
+        }
+    }
+</script>

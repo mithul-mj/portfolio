@@ -1,0 +1,6 @@
+<form method="post">
+    {% csrf_token %}
+    <label for="start_time">Set Start Time:</label>
+    <input type="datetime-local" name="start_time" required>
+    <button type="submit">Save</button>
+</form>
