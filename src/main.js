@@ -159,7 +159,8 @@ function update() {
     }
 
     // TRIGGER (Disintegrate)
-    if (!portraitTriggered && rect.left < triggerPoint) {
+    // Add scroll check to prevent immediate triggering on mobile where image might start at left=0
+    if (!portraitTriggered && rect.left < triggerPoint && lastScrollY > 50) {
       portraitTriggered = true;
       slashTimer = 25; // Trigger 25-frame Slash Animation
       heroImg.style.opacity = 0; // Hide real image

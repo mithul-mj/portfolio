@@ -127,7 +127,7 @@ body {
     /* Use the uploaded misty mountains image. */
     background-image: url('/misty_mountains_bg.jpg');
     background-size: cover;
-    background-position: center;
+    background-position: bottom center;
     background-repeat: no-repeat;
     z-index: -1;
     opacity: 1.0;

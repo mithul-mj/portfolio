@@ -36,12 +36,17 @@
 
     /* INTRO SECTION */
     .intro-container {
-        flex-direction: column-reverse;
-        /* Image on top, text on bottom? No, originally text left, image right. Column reverse puts image on top. */
-        height: auto;
-        padding-top: 10vh;
-        justify-content: center;
+        flex-direction: column;
+        /* Text (1st) on Top, Visual (2nd) Below */
+        height: 100vh;
+        padding-top: 15vh;
+        /* Push text down slightly from very top edge */
+        padding-bottom: 20vh;
+        /* Keep bottom clearance for Walker */
+        justify-content: flex-start;
+        /* Start from top */
         text-align: center;
+        gap: 2rem;
     }
 
     .intro-text {
