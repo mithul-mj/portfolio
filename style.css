@@ -1,0 +1,828 @@
+:root {
+    --bg-dark: #030305;
+    --bg-panel: #0a0a0f;
+    --piltover-gold: #c8aa6e;
+    --zaun-green: #0a3a2a;
+
+    /* Palette - Legend/Oriental Vibe */
+    --legend-red: #8b0000;
+    --legend-gold: #ffd700;
+    --legend-dark: #1a1a1a;
+
+    --text-main: #f0f0f0;
+    --text-muted: #c0c0c0;
+    --text-accent: #ffd700;
+
+    --font-heading: 'Shojumaru', serif;
+    /* Brush style */
+    --font-subheading: 'Cormorant Garamond', serif;
+    /* Elegant Serif */
+    --font-body: 'Inter', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.7;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--jinx-blue) var(--bg-dark);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Lantern Cursor */
+#lantern-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 200px;
+    height: 200px;
+    /* Soft orange/yellow glow */
+    background: radial-gradient(circle, rgba(58, 134, 255, 0.2) 0%, rgba(58, 134, 255, 0.05) 40%, transparent 70%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 9999;
+    mix-blend-mode: screen;
+    border-radius: 50%;
+    /* Inner "Core" of the lantern */
+    box-shadow: inset 0 0 20px rgba(58, 134, 255, 0.2);
+}
+
+/* Helper to create the scroll length */
+#scroll-height-helper {
+    height: 2000vh;
+    width: 1px;
+}
+
+/* Fixed viewport */
+/* Fixed viewport */
+#viewport {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    /* Basic fallback gradient */
+    background: #c4a46c;
+}
+
+#leaves-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    /* Between bg and ground */
+    pointer-events: none;
+}
+
+/* Ground floor visual (Mist/Sand) */
+.ground-fog {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    /* Covers Intro (100) + Projects (100) + Half of Skills (50) = 250vw */
+    width: 250vw;
+    height: 40vh;
+    /* Slightly taller to consume more */
+    background: #000;
+    /* Solid black base */
+    z-index: 0;
+    pointer-events: none;
+
+    /* Composite Mask:
+       1. Vertical: Fade from bottom (opaque) to top (transparent)
+       2. Horizontal: Fade from Left (transparent/light) to Right (Solid Opaque)
+    */
+    mask-image:
+        linear-gradient(to top, black 0%, transparent 100%),
+        linear-gradient(to right, rgba(0, 0, 0, 0.5) 0%, black 100%);
+
+    mask-composite: intersect;
+    -webkit-mask-image:
+        linear-gradient(to top, black 0%, transparent 100%),
+        linear-gradient(to right, rgba(0, 0, 0, 0.5) 0%, black 100%);
+    -webkit-mask-composite: source-in;
+}
+
+/* Background Image Layer */
+#viewport::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Use the uploaded misty mountains image. */
+    background-image: url('/misty_mountains_bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: -1;
+    opacity: 1.0;
+    /* Full opacity for the main image */
+}
+
+
+
+/* Dark Overlay for Text Visibility */
+#viewport::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    /* Significant darkening */
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Texture moves to a new pseudo-element or separate div if needed, 
+   but for now let's use a separate texture overlay to avoid conflict if ::after was used for texture 
+*/
+.texture-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: multiply;
+}
+
+/* Moving Container */
+#horizontal-content {
+    display: flex;
+    height: 100vh;
+    /* We make it wider to accommodate the falling section "Pause" */
+    width: 500vw;
+    will-change: transform;
+    position: relative;
+    z-index: 20;
+    /* Ensure content is above ground fog (z=5) */
+}
+
+/* Ensure text is readable against any background */
+.glass-card h1,
+.glass-card h2,
+.glass-card p,
+.project-card h3,
+.project-card p,
+.rune,
+.rune-desc {
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+/* SECTIONS */
+.panel {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    position: relative;
+    /* subtle separator */
+    border-right: 1px solid rgba(26, 22, 18, 0.1);
+}
+
+/* Intro & Projects are normal */
+
+
+/* SKILLS SECTION - THE FALL (Custom Layout) */
+.panel.skills {
+    /* This section is where the fall happens. 
+       We align content to the sides to leave space for the falling character in the center/left. 
+    */
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0 10vw;
+    align-items: flex-start;
+    /* Start from top */
+    /* overflow: hidden;  <-- REMOVED TO ALLOW SKILLS TO BE SEEN DURING FALL */
+    position: relative;
+    /* Anchor for hole */
+}
+
+/* THE ABYSS HOLE */
+/* THE ABYSS HOLE - Removed */
+.abyss-hole {
+    display: none;
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translate(-50%, 0);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: translate(-50%, 10px);
+        opacity: 1;
+    }
+}
+
+
+
+.skill-list.left {
+    align-items: flex-end;
+}
+
+.skill-list.right {
+    align-items: flex-start;
+}
+
+/* Contact needs to be reachable after fall */
+
+
+
+/* Arcane Typography -> Clean Aesthetic */
+/* Typography Updates based on images */
+.arcane-title {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    /* Brush font is naturally bold */
+    font-size: 5.5rem;
+    background: linear-gradient(to bottom, #ffd700 0%, #ff8c00 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    /* Brush fonts connect, so less spacing */
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 2;
+    line-height: 1.2;
+    transform: rotate(-2deg);
+    /* Slight organic tilt */
+}
+
+.arcane-title::after {
+    display: none;
+}
+
+.arcane-subtitle {
+    font-family: var(--font-subheading);
+    font-size: 2rem;
+    color: #e0e0e0;
+    text-transform: uppercase;
+    letter-spacing: 0.4em;
+    /* Wide spacing like "TOUCH TO START" */
+    margin-bottom: 2rem;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* Minimal Divider */
+/* Minimal Divider - Legend Style */
+.hextech-divider {
+    height: 1px;
+    width: 120px;
+    background: linear-gradient(90deg, transparent, var(--legend-gold), transparent);
+    margin: 2rem 0;
+    position: relative;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+    opacity: 0.8;
+}
+
+.hextech-divider::after {
+    display: none;
+}
+
+/* Glass Card - Semi-realistic Glass */
+/* Glass Card - Removed Background/Border as requested ("no need of cards") */
+.glass-card {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    text-align: center;
+    position: relative;
+    z-index: 10;
+    max-width: 900px;
+    box-shadow: none;
+}
+
+/* Ensure headings have distinct color (White/Gold) */
+.glass-card h1.arcane-title {
+    color: #f0f0f0;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 1);
+}
+
+.glass-card p {
+    color: #d0d0e0;
+}
+
+/* Hide decorative "Screws" */
+.glass-card::before,
+.glass-card::after {
+    display: none;
+}
+
+.glass-card::before {
+    top: 15px;
+    left: 15px;
+}
+
+.glass-card::after {
+    bottom: 15px;
+    right: 15px;
+}
+
+/* Custom description style */
+/* Custom description style for Premium Feel */
+/* Custom description style for Premium Feel */
+.description {
+    font-family: var(--font-body);
+    font-size: 1.125rem;
+    color: #f0f0f0;
+    /* Brighter text */
+    line-height: 1.8;
+    max-width: 600px;
+    margin: 0 auto;
+    font-weight: 400;
+    /* Slightly heavier */
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 1);
+    /* Hard shadow */
+}
+
+/* PROJECT CARDS - AMBIENT STYLE (No box) */
+
+/* PROJECT CARDS - AMBIENT STYLE (No box) */
+.project-grid {
+    display: flex;
+    gap: 4rem;
+    /* More breathing room */
+    perspective: 1000px;
+    align-items: flex-end;
+    /* Align bottom */
+}
+
+/* Project Card - Text Only Style */
+.project-card {
+    width: 350px;
+    height: auto;
+    background: transparent;
+    border: none;
+    border-left: 2px solid var(--legend-gold);
+    /* Simple line accent */
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1rem 2rem;
+    transition: all 0.4s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: visible;
+    backdrop-filter: none;
+}
+
+/* Remove the old top border and gradient */
+.project-card::before {
+    display: none;
+}
+
+.project-card:hover {
+    transform: translateY(-10px);
+    border-left-color: #fff;
+    /* Highlight line */
+    /* Add a subtle glow behind text instead of box */
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+.project-card h3 {
+    font-family: var(--font-heading);
+    font-size: 2rem;
+    /* Larger */
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 2;
+    transition: 0.3s;
+}
+
+.project-card:hover h3 {
+    letter-spacing: 2px;
+    /* Cinematic expansion */
+}
+
+.project-card p {
+    font-family: var(--font-body);
+    font-weight: 500;
+    color: #ffffff;
+    /* Brighter */
+    font-size: 0.95rem;
+    z-index: 2;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 1);
+}
+
+.project-card .tech-stack {
+    font-family: var(--font-body);
+    color: var(--legend-gold);
+    /* Make standout */
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 1);
+}
+
+.project-card .card-desc {
+    font-family: var(--font-body);
+    font-weight: 400;
+    color: #e0e0e0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 1);
+}
+
+/* SKILLS RUNES (Alternating List) */
+.skill-list {
+    position: absolute;
+    top: 200vh;
+    left: 0;
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    gap: 80vh;
+    /* Huge vertical gap to see them one by one during fall */
+
+    transform: translateY(0);
+    /* Will be animated in JS during fall */
+    z-index: 25;
+    pointer-events: none;
+    /* Let clicks pass through */
+}
+
+/* Base Rune Container */
+.rune-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 300px;
+    opacity: 1;
+    /* Visible by default for debugging */
+    transition: opacity 0.3s;
+}
+
+/* Alternating Positions */
+.rune-container.left {
+    align-self: flex-start;
+    margin-left: 25vw;
+    /* Push further to edge, away from center shadow */
+    text-align: left;
+}
+
+.rune-container.right {
+    align-self: flex-end;
+    margin-right: 25vw;
+    /* Push further to edge, away from center shadow */
+    text-align: right;
+}
+
+.rune {
+    font-family: var(--font-heading);
+    /* Brush style */
+    font-size: 3rem;
+    color: var(--text-main);
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+    transition: 0.3s;
+}
+
+.rune-desc {
+    font-family: var(--font-subheading);
+    color: var(--legend-gold);
+    font-size: 1.2rem;
+    margin-top: 0.5rem;
+    opacity: 0.9;
+    letter-spacing: 0.1em;
+}
+
+/* Rune Hover Effects */
+.rune-container:hover .rune {
+    color: var(--legend-gold);
+    transform: scale(1.1) rotate(-2deg);
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+}
+
+/* BUTTON - Legend Style */
+.hex-btn {
+    margin-top: 3rem;
+    background: transparent;
+    border: 1px solid var(--legend-gold);
+    color: var(--legend-gold);
+    padding: 0.8rem 2.5rem;
+    font-family: var(--font-subheading);
+    font-weight: 600;
+    font-size: 1.1rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: 0.4s ease;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0;
+    /* Sharp edges */
+    box-shadow: none;
+}
+
+.hex-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: var(--legend-gold);
+    transition: 0.5s;
+    z-index: -1;
+}
+
+.hex-btn:hover {
+    color: #000;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.hex-btn:hover::before {
+    left: 0;
+}
+
+/* CHARACTER & ANIMATION */
+#walker-container {
+    position: absolute;
+    bottom: 5vh;
+    left: 30%;
+    /* Shifted left to match reference composition */
+    transform: translateX(-50%);
+    z-index: 100;
+    pointer-events: none;
+    /* Transition for falling state position changes */
+    transition: bottom 0.2s, left 0.5s;
+}
+
+#character-canvas {
+    height: 50vh;
+    /* Half screen height as requested */
+    width: 50vh;
+    /* Keep aspect ratio square container */
+    filter: drop-shadow(0 0 15px rgba(5, 217, 232, 0.0));
+    /* Remove glow, keep dark */
+}
+
+/* ATMOSPHERE OVERLAYS */
+.vignette {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle, transparent 50%, #000 130%);
+    pointer-events: none;
+    z-index: 90;
+}
+
+.grain {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 95;
+    opacity: 0.07;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Extra Graphic Details */
+.decor-gear {
+    position: absolute;
+    bottom: -100px;
+    right: -100px;
+    width: 400px;
+    height: 400px;
+    border: 2px dashed rgba(76, 201, 240, 0.1);
+    border-radius: 50%;
+    animation: rotate 60s linear infinite;
+    z-index: 0;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* CINEMATIC INTERFACE FX */
+#cinematic-interface {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 50;
+    /* Above most content, below cursor */
+}
+
+.cinema-bar {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 0;
+    /* Animated via JS */
+    background: #000;
+    transition: height 0.1s linear;
+    z-index: 51;
+}
+
+.cinema-bar.top {
+    top: 0;
+    border-bottom: 2px solid var(--legend-gold);
+    /* Gold Trim */
+}
+
+.cinema-bar.bottom {
+    bottom: 0;
+    border-top: 2px solid var(--legend-gold);
+    /* Gold Trim */
+}
+
+.cinema-vignette {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, transparent 60%, rgba(0, 0, 0, 0.9) 100%);
+    opacity: 0;
+    /* Animated via JS */
+    transition: opacity 0.1s linear;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .arcane-title {
+        font-size: 3rem;
+    }
+
+    .project-grid {
+        flex-direction: column;
+    }
+
+    #horizontal-content {
+        width: 400vw;
+        /* Keep scroll mechanics */
+    }
+}
+
+/* INTRO SECTION - Split Layout (Reference Style) */
+.intro-container {
+    display: flex;
+    flex-direction: row;
+    width: 80vw;
+    height: 80vh;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 10;
+}
+
+.intro-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    text-align: left;
+    padding-right: 2rem;
+    z-index: 5;
+}
+
+.intro-visual {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    position: relative;
+}
+
+/* Portrait Image - Large, Blended */
+.hero-image {
+    height: 110%;
+    /* Slight bleed */
+    width: auto;
+    object-fit: contain;
+    /* Use the SVG filter we added to index.html */
+    filter: url(#remove-white) grayscale(100%) contrast(1.2);
+    /* Soften all edges, especially top/bottom */
+    mask-image: radial-gradient(ellipse at 50% 60%, black 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 60%, black 30%, transparent 80%);
+    transform: translateX(10%);
+    /* Push slightly to right edge */
+    opacity: 0.9;
+    /* Remove mix-blend-mode as the filter handles transparency now */
+}
+
+
+/* Left Aligned Text Overrides */
+.intro-text .arcane-title {
+    font-size: 6rem;
+    line-height: 0.9;
+    margin-left: -5px;
+    /* Visual alignment */
+    transform: none;
+    /* No tilt for this clean style */
+    text-shadow: none;
+    color: var(--text-main);
+    background: none;
+    -webkit-text-fill-color: initial;
+}
+
+.intro-text .arcane-subtitle {
+    font-size: 4rem;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 0;
+    line-height: 1;
+}
+
+.intro-year {
+    font-family: var(--font-body);
+    font-style: italic;
+    color: var(--legend-gold);
+    margin-bottom: 2rem;
+    font-weight: 500;
+}
+
+.hextech-divider.left-align {
+    margin: 2rem 0;
+    align-self: flex-start;
+    background: var(--text-main);
+    /* Cleaner line */
+    width: 100px;
+    height: 2px;
+    box-shadow: none;
+}
+
+.description.left-align {
+    text-align: left;
+    margin: 0;
+    max-width: 400px;
+    color: var(--text-muted);
+    font-size: 1rem;
+}
+
+.logo-mark {
+    margin-bottom: 2rem;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .intro-container {
+        flex-direction: column-reverse;
+        justify-content: center;
+    }
+
+    .intro-text {
+        align-items: center;
+        text-align: center;
+    }
+
+    .intro-visual {
+        height: 40vh;
+        margin-bottom: 2rem;
+    }
+
+    .hero-image {
+        height: 100%;
+    }
+}

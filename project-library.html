@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Library Management System - Mithul MJ Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Shojumaru&family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="./extra.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            overflow-y: auto;
+            height: auto;
+            background-image: url('/misty_mountains_bg.jpg');
+            background-attachment: fixed;
+            background-size: cover;
+        }
+
+        .grimoire-container {
+            max-width: 900px;
+            margin: 100px auto;
+            background: rgba(10, 10, 15, 0.9);
+            border: 1px solid var(--legend-gold);
+            padding: 3rem;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            text-decoration: none;
+            color: var(--legend-gold);
+            font-family: var(--font-subheading);
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 100;
+            transition: 0.3s;
+        }
+
+        .back-btn:hover {
+            transform: translateX(-5px);
+            text-shadow: 0 0 10px var(--legend-gold);
+        }
+
+        .project-hero {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid rgba(200, 170, 110, 0.3);
+            padding-bottom: 2rem;
+        }
+
+        .project-title {
+            font-family: var(--font-heading);
+            font-size: 3.5rem;
+            color: var(--text-main);
+            background: linear-gradient(to bottom, #ffd700 0%, #ff8c00 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .project-meta {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+            color: var(--text-muted);
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .content-block {
+            margin-bottom: 3rem;
+        }
+
+        .content-block h2 {
+            font-family: var(--font-subheading);
+            color: var(--legend-gold);
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .content-block h2::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--legend-gold), transparent);
+            opacity: 0.3;
+        }
+
+        .content-block p {
+            font-family: var(--font-body);
+            color: #d0d0e0;
+            line-height: 1.8;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .tech-item {
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            padding: 0.8rem;
+            text-align: center;
+            font-family: var(--font-subheading);
+            color: #eee;
+            background: rgba(0, 0, 0, 0.3);
+            transition: 0.3s;
+        }
+
+        .tech-item:hover {
+            border-color: var(--legend-gold);
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border: 1px solid #333;
+            filter: grayscale(0.5);
+            transition: 0.5s;
+            background: #111;
+        }
+
+        .gallery-img:hover {
+            filter: grayscale(0);
+            border-color: var(--legend-gold);
+        }
+    </style>
+</head>
+
+<body>
+
+    <a href="/" class="back-btn">
+        <i data-lucide="arrow-left"></i> Return to Map
+    </a>
+
+    <main class="grimoire-container">
+
+        <header class="project-hero">
+            <h1 class="project-title">Library Management System</h1>
+            <div class="project-meta">
+                <span><i data-lucide="calendar" style="width:14px; display:inline"></i> 2023</span>
+                <span><i data-lucide="code" style="width:14px; display:inline"></i> PHP / MySQL / JavaScript</span>
+                <span><i data-lucide="briefcase" style="width:14px; display:inline"></i> Web Application</span>
+            </div>
+        </header>
+
+        <section class="content-block">
+            <h2><i data-lucide="scroll-text"></i> The Challenge</h2>
+            <p>
+                Libraries often struggle with manual book tracking, leading to misplaced books,
+                inefficient checkouts, and poor user experience for both librarians and borrowers.
+            </p>
+            <p>
+                My goal was to create a comprehensive web application that digitizes the entire
+                library management process with a focus on security and performance.
+            </p>
+        </section>
+
+        <section class="content-block">
+            <h2><i data-lucide="hammer"></i> The Architecture</h2>
+            <p>
+                Built with a <strong>PHP backend</strong> connected to a <strong>MySQL database</strong>,
+                the system implements secure user authentication with role-based access control
+                for administrators and regular users.
+            </p>
+            <p>
+                The frontend uses <strong>JavaScript</strong> for dynamic interactions including
+                real-time book search with autocomplete, instant availability checking, and
+                responsive UI components.
+            </p>
+            <div class="tech-grid">
+                <div class="tech-item">PHP</div>
+                <div class="tech-item">MySQL</div>
+                <div class="tech-item">JavaScript</div>
+                <div class="tech-item">HTML5</div>
+                <div class="tech-item">CSS3</div>
+                <div class="tech-item">AJAX</div>
+            </div>
+        </section>
+
+        <section class="content-block">
+            <h2><i data-lucide="target"></i> Key Features</h2>
+            <p>
+                • <strong>Secure Login:</strong> Role-based authentication for admins and users<br>
+                • <strong>Real-time Search:</strong> Instant book lookup with autocomplete suggestions<br>
+                • <strong>Book Management:</strong> Add, edit, delete, and track book inventory<br>
+                • <strong>User Management:</strong> Register borrowers and track their history<br>
+                • <strong>Optimized Performance:</strong> Efficient database queries for fast response
+            </p>
+        </section>
+
+        <section class="content-block">
+            <h2><i data-lucide="image"></i> Visual Archives</h2>
+            <div class="gallery">
+                <div class="gallery-img"></div>
+                <div class="gallery-img"></div>
+            </div>
+        </section>
+
+        <section class="content-block" style="text-align: center; margin-top: 4rem;">
+            <a href="https://github.com/mithul-mj" target="_blank" class="hex-btn">View on GitHub</a>
+        </section>
+
+    </main>
+
+    <script>
+        if (window.lucide) lucide.createIcons();
+    </script>
+</body>
+
+</html>
