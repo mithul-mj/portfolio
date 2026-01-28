@@ -14,16 +14,18 @@
 
     /* TYPOGRAPHY */
     .arcane-title {
-        font-size: 3rem;
+        /* Fluid: 2.5rem min, 8vw preferred, 4rem max */
+        font-size: clamp(2.5rem, 8vw, 4rem);
         text-align: center;
         margin-left: 0 !important;
-        /* Override inline/style adjustments */
+        line-height: 1.1;
     }
 
     .arcane-subtitle {
-        font-size: 1.5rem;
+        font-size: clamp(1.2rem, 4vw, 1.5rem);
         text-align: center;
         letter-spacing: 0.2em;
+        margin-bottom: 1.5rem;
     }
 
     .description {
