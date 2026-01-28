@@ -25,16 +25,34 @@ let facingRight = true;
 let tick = 0;
 let slashTimer = 0; // State for attack animation
 
-// Config
-const totalScrollHeight = document.body.scrollHeight;
-const viewportHeight = window.innerHeight;
-const viewportWidth = window.innerWidth;
-const fallStart = viewportWidth * 2.1; // Sync with new Shadow Edge (250vw - buffer)
-const landStart = fallStart + 4000; // MUCH longer fall to clear all skills (was 2200)
+// Config - Dynamic for Resize
+let viewportHeight = window.innerHeight;
+let viewportWidth = window.innerWidth;
+// Sync key markers with viewport width
+let fallStart = viewportWidth * 2.1;
+let landStart = fallStart + 4000;
+
 const skillLists = document.querySelectorAll('.skill-list');
 const runeContainers = document.querySelectorAll('.rune-container');
 const walkerContainer = document.getElementById('walker-container');
 const contactPanel = document.querySelector('.panel.contact');
+
+// ... existing code ...
+
+function resize() {
+  viewportWidth = window.innerWidth;
+  viewportHeight = window.innerHeight;
+
+  // Recalculate triggers
+  fallStart = viewportWidth * 2.1;
+  landStart = fallStart + 4000;
+
+  leavesCanvas.width = window.innerWidth;
+  leavesCanvas.height = window.innerHeight;
+  // Canvas resolution matching display size
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+}
 
 // --- PARTICLES ---
 let leaves = [];
@@ -47,13 +65,8 @@ const heroImg = document.querySelector('.hero-image');
 let portraitParticles = [];
 let portraitTriggered = false;
 
-function resize() {
-  leavesCanvas.width = window.innerWidth;
-  leavesCanvas.height = window.innerHeight;
-  // Canvas resolution matching display size
-  canvas.width = canvas.offsetWidth;
-  canvas.height = canvas.offsetHeight;
-}
+
+
 window.addEventListener('resize', resize);
 resize();
 

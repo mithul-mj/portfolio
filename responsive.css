@@ -1,0 +1,163 @@
+/* Mobile and Tablet Responsiveness */
+
+@media (max-width: 1024px) {
+    .arcane-title {
+        font-size: 4rem;
+    }
+
+    .intro-container {
+        width: 90vw;
+    }
+}
+
+@media (max-width: 768px) {
+
+    /* TYPOGRAPHY */
+    .arcane-title {
+        font-size: 3rem;
+        text-align: center;
+        margin-left: 0 !important;
+        /* Override inline/style adjustments */
+    }
+
+    .arcane-subtitle {
+        font-size: 1.5rem;
+        text-align: center;
+        letter-spacing: 0.2em;
+    }
+
+    .description {
+        font-size: 1rem;
+        text-align: center !important;
+        margin: 0 auto;
+    }
+
+    /* INTRO SECTION */
+    .intro-container {
+        flex-direction: column-reverse;
+        /* Image on top, text on bottom? No, originally text left, image right. Column reverse puts image on top. */
+        height: auto;
+        padding-top: 10vh;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .intro-text {
+        align-items: center;
+        /* Center align text */
+        padding-right: 0;
+        margin-top: 2rem;
+        z-index: 20;
+        /* Ensure text is above image elements if overlap */
+    }
+
+    .intro-visual {
+        width: 100%;
+        height: 40vh;
+        /* Limit image height */
+        justify-content: center;
+    }
+
+    .hero-image {
+        height: 100%;
+        width: auto;
+        transform: translateX(0);
+        /* Center it */
+        mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+    }
+
+    .hextech-divider.left-align {
+        align-self: center;
+        /* Center divider */
+    }
+
+    /* PROJECT SECTION */
+    .project-grid {
+        flex-direction: column;
+        gap: 2rem;
+        align-items: center;
+        justify-content: flex-start;
+        height: 80vh;
+        /* Allow scrolling within if needed? No, horizontal scroll content needs strict width */
+        width: 100vw;
+        /* Take full width of "panel" */
+        overflow-y: auto;
+        /* Allow internal scroll if they don't fit? No, that breaks the horizontal flow */
+        /* Better to just shrink them or stack them tightly */
+        justify-content: center;
+    }
+
+    .project-card {
+        width: 80vw;
+        /* Wider cards */
+        padding: 1rem;
+        height: auto;
+        border-left: 4px solid var(--legend-gold);
+        /* Thicker accent */
+    }
+
+    .project-card h3 {
+        font-size: 1.5rem;
+    }
+
+    /* CHARACTER */
+    #walker-container {
+        left: 50% !important;
+        /* Force center */
+        transform: translateX(-50%) !important;
+        bottom: 10vh;
+    }
+
+    #character-canvas {
+        width: 40vh;
+        /* Smaller character */
+        height: 40vh;
+    }
+
+    /* CLIFF & SKILLS */
+    .cliff-container {
+        /* Height adjustment for mobile portrait */
+        height: 30vh;
+        bottom: 0;
+    }
+
+    /* Rune positioning optimization for narrow screens */
+    .rune-container.left {
+        margin-left: 5vw;
+        text-align: left;
+    }
+
+    .rune-container.right {
+        margin-right: 5vw;
+        text-align: right;
+    }
+
+    .rune {
+        font-size: 2rem;
+    }
+
+    .rune-desc {
+        font-size: 1rem;
+    }
+
+    /* Adjust fall spacing? The JS handles spacing */
+
+    /* LANDING */
+    .landing-content {
+        padding: 1rem;
+    }
+}
+
+/* Landscape Mobile Fixes */
+@media (max-height: 500px) and (orientation: landscape) {
+    #character-canvas {
+        height: 60vh;
+        width: 60vh;
+    }
+
+    .intro-container {
+        flex-direction: row;
+        /* Keep row for landscape */
+    }
+}
