@@ -2,7 +2,7 @@
 
 @media (max-width: 1024px) {
     .arcane-title {
-        font-size: 4rem;
+        font-size: clamp(3rem, 5vw + 1rem, 6rem);
     }
 
     .intro-container {
