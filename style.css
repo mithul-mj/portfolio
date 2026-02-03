@@ -72,8 +72,8 @@ body {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    /* Basic fallback gradient */
-    background: #c4a46c;
+    /* Basic fallback gradient - Updated to Dark to match theme */
+    background: var(--bg-dark);
 }
 
 #leaves-canvas {
@@ -117,24 +117,24 @@ body {
 }
 
 /* Background Image Layer */
-#viewport::before {
-    content: "";
+/* Background Image Layer (Converted to Div for Parallax) */
+#parallax-bg {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    /* Use the uploaded misty mountains image. */
+    top: -10vh;
+    /* Start higher to allow more upward movement */
+    left: -5vw;
+    width: 120vw;
+    height: 130vh;
+    /* Increased height to prevent bottom lift-off */
+    /* Use the original background image as requested. */
     background-image: url('/misty_mountains_bg.jpg');
     background-size: cover;
-    background-position: bottom center;
+    background-position: center;
     background-repeat: no-repeat;
     z-index: -1;
     opacity: 1.0;
-    /* Full opacity for the main image */
+    will-change: transform;
 }
-
-
 
 /* Dark Overlay for Text Visibility */
 #viewport::after {
@@ -197,8 +197,8 @@ body {
     justify-content: center;
     flex-direction: column;
     position: relative;
-    /* subtle separator */
-    border-right: 1px solid rgba(26, 22, 18, 0.1);
+    /* subtle separator REMOVED */
+    border-right: none;
 }
 
 /* Intro & Projects are normal */

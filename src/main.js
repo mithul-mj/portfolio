@@ -8,6 +8,7 @@ const ctx = canvas.getContext('2d');
 const leavesCanvas = document.getElementById('leaves-canvas');
 const leavesCtx = leavesCanvas.getContext('2d');
 const lantern = document.getElementById('lantern-cursor');
+const parallaxBg = document.getElementById('parallax-bg');
 
 // --- LANTERN CURSOR LOGIC ---
 document.addEventListener('mousemove', (e) => {
@@ -179,11 +180,22 @@ function update() {
     }
   }
 
+  // PARALLAX BACKGROUND LOGIC
+  // We move it slightly opposite to the scroll direction
+  // Horizontal movement factor: 0.1 (Move 1px for every 10px scroll)
+  // Vertical movement factor: 0.2
+  let bgX = 0;
+  let bgY = 0;
+
   // -- SCROLL LOGIC --
   if (scrollY < fallStart) {
     // PHASE 1: Horizontal
     isFalling = false;
     horizontalContent.style.transform = `translateX(${-scrollY}px)`;
+
+    // Parallax X
+    bgX = -scrollY * 0.05;
+    if (parallaxBg) parallaxBg.style.transform = `translate(${bgX}px, 0)`;
 
     const delta = scrollY - lastScrollY;
     if (Math.abs(delta) > 0.5) {
@@ -206,6 +218,13 @@ function update() {
       const offset = -deepScroll * parallaxSpeed;
       list.style.transform = `translateY(${offset}px)`;
     });
+
+    // Parallax logic for background during fall
+    // X is fixed at fallStart parallax
+    bgX = -fallStart * 0.05;
+    // Y moves up slightly
+    bgY = -deepScroll * 0.05;
+    if (parallaxBg) parallaxBg.style.transform = `translate(${bgX}px, ${bgY}px)`;
 
     // -- RUNES FADE-IN LOGIC --
     runeContainers.forEach(rune => {
@@ -293,31 +312,27 @@ function update() {
     const deepScroll = landStart - fallStart;
     horizontalContent.style.transform = `translate(${-fallStart}px, ${-deepScroll}px)`;
 
-    // Move Skills away or keep them frozen? Keep frozen.
+    // Parallax Final Position
+    if (parallaxBg) {
+      parallaxBg.style.transform = `translate(${-fallStart * 0.05}px, ${-deepScroll * 0.05}px)`;
+    }
 
     // Reveal Contact Panel - DISABLED per user request ("nothing on screen")
     if (contactPanel) {
-      // contactPanel.classList.add('active');
-      // contactPanel.style.opacity = 1; 
-      // contactPanel.style.pointerEvents = 'all';
       contactPanel.style.opacity = 0; // Ensure hidden
       contactPanel.style.pointerEvents = 'none';
     }
 
-    // Hide walker or transition to sitting
-    // if (walkerContainer) walkerContainer.style.opacity = 0; <--- OLD
-
     // NEW: Keep walker visible for the Epic Pose
     if (walkerContainer) {
       walkerContainer.style.opacity = 1;
-      // Position him nicely on the "Hill" (CSS positions him, we just draw)
     }
 
     // Draw the Epic Landed Pose
     drawSamuraiLanded(ctx, tick);
 
     // Draw Global FX over it
-    drawFx();
+    drawFx(false); // No vertical wind on ground
 
     lastScrollY = scrollY;
     requestAnimationFrame(update);
@@ -346,41 +361,57 @@ function update() {
   if (isFalling) {
     drawSamuraiFalling(ctx, walkTime);
   } else {
-    // Combat Mode Detection: Section 2 (Selected Works)
-    // Map roughly 100vw to 180vw (End of Selected Works / Start of Cinematic)
+    // Combat Mode Detection
     const combatMode = scrollY > viewportWidth * 0.9 && scrollY < viewportWidth * 1.8;
 
     // RUN SPRINT LOGIC
-    // After combat ends (1.8vw) and before fall (2.4vw), increase animation speed
-    // to simulate sprinting towards the edge.
     let speedMultiplier = 1.0;
     if (scrollY > viewportWidth * 1.8 && scrollY < fallStart) {
       speedMultiplier = 2.0; // RUN FASTER
     }
 
-    // Override the time sent to draw function for faster leg movement if sprinting
     const effectiveTime = walkTime * speedMultiplier;
 
     drawSamuraiWalking(ctx, effectiveTime, isWalking, facingRight, tick, combatMode, isSpecialMove, slashTimer);
   }
 
   // Draw Global FX
-  drawFx();
+  drawFx(isFalling);
 
   lastScrollY = scrollY;
   requestAnimationFrame(update);
 }
 
 // --- DRAW FX (Leaves + Dust) ---
-function drawFx() {
+function drawFx(isFalling = false) {
   leavesCtx.clearRect(0, 0, leavesCanvas.width, leavesCanvas.height);
 
   // 1. LEAVES
   leaves.forEach(leaf => {
-    leaf.y += leaf.speedY;
-    leaf.x += leaf.speedX + Math.sin(tick * 0.1 + leaf.y * 0.01) * 0.5;
+    // Physics
+    if (isFalling) {
+      // Falling State: Leaves fly UP (relative to camera)
+      leaf.y -= leaf.speedY * 15; // Move up fast
+      leaf.x += Math.sin(tick * 0.1) * 2; // Chaotic jiggle
+
+      // Reset if goes off top
+      if (leaf.y < -50) {
+        leaf.y = leavesCanvas.height + 50;
+        leaf.x = Math.random() * leavesCanvas.width;
+      }
+    } else {
+      // Normal: Fall down gently
+      leaf.y += leaf.speedY;
+      leaf.x += leaf.speedX + Math.sin(tick * 0.1 + leaf.y * 0.01) * 0.5;
+
+      // Reset if goes off bottom
+      if (leaf.y > leavesCanvas.height) {
+        leaf.y = -10;
+        leaf.x = Math.random() * leavesCanvas.width;
+      }
+    }
+
     leaf.rotation += leaf.rSpeed;
-    if (leaf.y > leavesCanvas.height) { leaf.y = -10; leaf.x = Math.random() * leavesCanvas.width; }
 
     leavesCtx.save();
     leavesCtx.translate(leaf.x, leaf.y);
@@ -394,61 +425,76 @@ function drawFx() {
 
   // 2. DUST WIND
   dust.forEach(d => {
-    d.x += d.speedX;
-    if (d.x < -100) d.x = leavesCanvas.width + 100;
+    if (isFalling) {
+      // Vertical Upward Streaks
+      d.y -= Math.abs(d.speedX) * 2; // Use X speed magnitude for Y up movement
+      d.x += (Math.random() - 0.5); // Slight jitter
 
-    leavesCtx.save();
-    leavesCtx.beginPath();
-    // Fast wind streaks
-    const gradient = leavesCtx.createLinearGradient(d.x, d.y, d.x + d.length, d.y);
-    gradient.addColorStop(0, `rgba(180, 160, 120, 0)`);
-    gradient.addColorStop(0.5, `rgba(180, 160, 120, ${d.opacity})`);
-    gradient.addColorStop(1, `rgba(180, 160, 120, 0)`);
+      // Reset
+      if (d.y < -100) {
+        d.y = leavesCanvas.height + Math.random() * 200; // Start below
+        d.x = Math.random() * leavesCanvas.width;
+      }
 
-    leavesCtx.strokeStyle = gradient;
-    leavesCtx.lineWidth = d.size;
-    leavesCtx.moveTo(d.x, d.y);
-    leavesCtx.lineTo(d.x + d.length, d.y + (Math.random() * 2 - 1)); // Slight jitter
-    leavesCtx.stroke();
-    leavesCtx.stroke();
-    leavesCtx.restore();
+      // Draw Vertical
+      leavesCtx.save();
+      leavesCtx.beginPath();
+      // Gradient tail
+      const gradient = leavesCtx.createLinearGradient(d.x, d.y, d.x, d.y + d.length);
+      gradient.addColorStop(0, `rgba(180, 160, 120, 0)`);
+      gradient.addColorStop(0.5, `rgba(180, 160, 120, ${d.opacity})`);
+      gradient.addColorStop(1, `rgba(180, 160, 120, 0)`);
+
+      leavesCtx.strokeStyle = gradient;
+      leavesCtx.lineWidth = d.size;
+      leavesCtx.moveTo(d.x, d.y);
+      leavesCtx.lineTo(d.x, d.y + d.length * 2); // Longer streaks for speed
+      leavesCtx.stroke();
+      leavesCtx.restore();
+
+    } else {
+      // Horizontal Leftward Streaks
+      d.x += d.speedX;
+      if (d.x < -100) d.x = leavesCanvas.width + 100;
+
+      leavesCtx.save();
+      leavesCtx.beginPath();
+      // Fast wind streaks
+      const gradient = leavesCtx.createLinearGradient(d.x, d.y, d.x + d.length, d.y);
+      gradient.addColorStop(0, `rgba(180, 160, 120, 0)`);
+      gradient.addColorStop(0.5, `rgba(180, 160, 120, ${d.opacity})`);
+      gradient.addColorStop(1, `rgba(180, 160, 120, 0)`);
+
+      leavesCtx.strokeStyle = gradient;
+      leavesCtx.lineWidth = d.size;
+      leavesCtx.moveTo(d.x, d.y);
+      leavesCtx.lineTo(d.x + d.length, d.y + (Math.random() * 2 - 1)); // Slight jitter
+      leavesCtx.stroke();
+      leavesCtx.restore(); // Make sure to restore!
+    }
   });
 
   // 3. PORTRAIT PARTICLES
+  // (Keep existing logic, assuming it renders over everything)
   if (portraitTriggered && portraitParticles.length > 0) {
-    // Get rect for "Origin" reference if needed, but we already have triggered
-    // We assume particles were 'at rest' relative to the image when it triggered.
-    // We need to know where the image WAS when triggered?
-    // Actually, we can calculate the current 'hypothetical' position of the image
-    // even if hidden, using its rect (which updates with scroll).
-
     const rect = heroImg.getBoundingClientRect();
 
     portraitParticles.forEach(p => {
       if (!p.exploded) {
-        // Initialize start position based on current image rect
         p.currX = rect.left + p.nx * rect.width;
         p.currY = rect.top + p.ny * rect.height;
-
-        // Velocity: Fly LEFT/Up (dispersing)
-        // Random cone pointing Left (135 to 225 degrees)
         const angle = (Math.random() * 90 + 135) * Math.PI / 180;
-        const speed = Math.random() * 4 + 1; // Slower start
-
+        const speed = Math.random() * 4 + 1;
         p.vx = Math.cos(angle) * speed;
-        p.vy = Math.sin(angle) * speed - 0.5; // Gentle upward bias
-
+        p.vy = Math.sin(angle) * speed - 0.5;
         p.exploded = true;
       }
-
-      // Physics
       p.currX += p.vx;
       p.currY += p.vy;
-      p.vy += 0.05; // Low gravity for floating effect
-      p.vx *= 0.99; // Low air resistance
-      p.size *= 0.99; // Very slow shrink
-
-      p.rotation += p.rSpeed; // Spin
+      p.vy += 0.05;
+      p.vx *= 0.99;
+      p.size *= 0.99;
+      p.rotation += p.rSpeed;
 
       if (p.size > 0.2) {
         leavesCtx.save();
@@ -456,7 +502,6 @@ function drawFx() {
         leavesCtx.rotate(p.rotation * Math.PI / 180);
         leavesCtx.fillStyle = p.c;
         leavesCtx.beginPath();
-        // Draw Leaf Shape (Ellipse)
         leavesCtx.ellipse(0, 0, p.size, p.size / 2, 0, 0, Math.PI * 2);
         leavesCtx.fill();
         leavesCtx.restore();
@@ -631,6 +676,19 @@ function drawSamuraiWalking(ctx, time, moving, isFacingRight, tick, combatMode =
     ctx.arc(0, -55, 12, 0, Math.PI * 2);
     ctx.fill();
 
+    // SWORD (Held in hand, tucked against body for aerodynamics)
+    ctx.save();
+    ctx.translate(10, -45); // Shoulder approx
+    ctx.rotate(-0.2); // Align with body
+
+    // Hilt
+    ctx.fillStyle = '#333';
+    ctx.fillRect(-5, -5, 10, 4);
+    // Blade
+    ctx.fillStyle = '#111';
+    ctx.fillRect(-2, -5, 4, -50); // Pointing back/up
+    ctx.restore();
+
     // Arms (Reaching)
     // Back Arm
     ctx.lineWidth = 8;
@@ -764,9 +822,13 @@ function drawSamuraiWalking(ctx, time, moving, isFacingRight, tick, combatMode =
   ctx.save();
   ctx.translate(-5, -28); // Shoulder pivot
 
-  // Apply Sword Rotation (Normal vs Combat)
+  // Apply Sword Rotation (Normal vs Combat vs Special)
   let currentSwordAngle = -0.5 + (moving ? Math.sin(time) * 0.1 : 0) + breath;
-  if (combatMode && moving) {
+
+  // Logic Fix: Ensure Sword Rotation applies if Special Move or Slashing, even if not 'moving'
+  if (isSpecialMove || slashTimer > 0) {
+    currentSwordAngle = swordRot;
+  } else if (combatMode && moving) {
     if (isAttacking) currentSwordAngle = swordRot;
     else currentSwordAngle = -1.5; // Guard position when running in combat
   }
@@ -999,46 +1061,20 @@ function drawSamuraiLanded(ctx, time) {
   ctx.save();
   ctx.translate(cx, cy);
 
-  // === 1. REALISTIC MOUNTAIN ===
+  // === 1. FOREGROUND ROCK (Landing Platform) ===
+  // We draw ONLY the ground he lands on, leaving the background transparent 
+  // so the parallax image shows through.
 
-  // Far background mountains (lightest, atmospheric perspective)
-  ctx.fillStyle = '#3a3a3a';
-  ctx.beginPath();
-  ctx.moveTo(-400, 200);
-  ctx.lineTo(-280, 80);
-  ctx.quadraticCurveTo(-220, 50, -150, 90);
-  ctx.lineTo(-80, 60);
-  ctx.quadraticCurveTo(0, 30, 80, 60);
-  ctx.lineTo(150, 90);
-  ctx.quadraticCurveTo(220, 50, 280, 80);
-  ctx.lineTo(400, 200);
-  ctx.closePath();
-  ctx.fill();
-
-  // Mid mountain layer
-  ctx.fillStyle = '#2a2a2a';
-  ctx.beginPath();
-  ctx.moveTo(-350, 200);
-  ctx.lineTo(-200, 100);
-  ctx.quadraticCurveTo(-150, 70, -100, 85);
-  ctx.lineTo(-50, 50);
-  ctx.quadraticCurveTo(0, 25, 50, 50);
-  ctx.lineTo(100, 85);
-  ctx.quadraticCurveTo(150, 70, 200, 100);
-  ctx.lineTo(350, 200);
-  ctx.closePath();
-  ctx.fill();
-
-  // Main mountain (where character stands)
+  // Main Rock/Mountain Peak (where character stands)
   ctx.fillStyle = '#1a1a1a';
   ctx.beginPath();
-  ctx.moveTo(-250, 200);
-  ctx.quadraticCurveTo(-180, 120, -100, 60);
+  ctx.moveTo(-250, 400); // Start low-left
+  ctx.quadraticCurveTo(-180, 150, -100, 60);
   ctx.quadraticCurveTo(-50, 30, -20, 18);
-  ctx.lineTo(0, 12); // Peak
+  ctx.lineTo(0, 12); // Peak (under character)
   ctx.lineTo(20, 18);
   ctx.quadraticCurveTo(50, 30, 100, 60);
-  ctx.quadraticCurveTo(180, 120, 250, 200);
+  ctx.quadraticCurveTo(180, 150, 250, 400); // End low-right
   ctx.closePath();
   ctx.fill();
 
@@ -1052,174 +1088,165 @@ function drawSamuraiLanded(ctx, time) {
   ctx.quadraticCurveTo(-15, 25, -30, 20);
   ctx.fill();
 
-  // Rocky texture lines
+  // Simple texture details
   ctx.strokeStyle = 'rgba(50, 50, 50, 0.3)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(-60, 40);
-  ctx.quadraticCurveTo(-100, 90, -150, 150);
+  ctx.quadraticCurveTo(-80, 70, -120, 100);
   ctx.stroke();
   ctx.beginPath();
   ctx.moveTo(60, 40);
-  ctx.quadraticCurveTo(100, 90, 150, 150);
+  ctx.quadraticCurveTo(80, 70, 120, 100);
   ctx.stroke();
+
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  // === SUPERHERO LANDING POSE (Iron Man Style) ===
+  const crouchY = 15; // Shift down to ground level
+
+  // === 2. IMPACT CRACKS (Ground) ===
+  // Radiating from the fist contact point
+  ctx.save();
+  ctx.translate(0, 30); // Ground level
+  ctx.scale(1, 0.3); // Perspective flatten
+
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(-30, 30);
-  ctx.quadraticCurveTo(-60, 80, -80, 130);
+  // Random jagged lines radiating from center
+  for (let i = 0; i < 8; i++) {
+    const angle = i * (Math.PI * 2 / 8);
+    const len = 30 + Math.random() * 20;
+    ctx.moveTo(0, 0);
+    ctx.lineTo(Math.cos(angle) * len, Math.sin(angle) * len);
+  }
   ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(30, 30);
-  ctx.quadraticCurveTo(60, 80, 80, 130);
-  ctx.stroke();
+
+  // Impact debris/dust
+  ctx.fillStyle = 'rgba(50, 50, 50, 0.5)';
+  for (let i = 0; i < 5; i++) {
+    ctx.beginPath();
+    ctx.arc(Math.random() * 60 - 30, Math.random() * 40 - 20, Math.random() * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // === 3. CHARACTER BODY (Crouched) ===
+  ctx.translate(0, crouchY);
 
   ctx.fillStyle = inkColor;
   ctx.strokeStyle = inkColor;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-
-  // === 2. LEGS (Wide Power Stance) ===
   ctx.lineWidth = 12;
 
-  // Left Leg
+  // -- RIGHT LEG (Knee Down) --
+  // Thigh goes forward/down to knee
+  // Shin goes back along ground
   ctx.beginPath();
-  ctx.moveTo(0, -40); // Hip
-  ctx.lineTo(-35, 20); // Foot wide left
+  ctx.moveTo(5, -20); // Hip
+  ctx.lineTo(25, 15); // Knee (Ground contact)
+  ctx.lineTo(55, 15); // Foot dragging back
   ctx.stroke();
 
-  // Right Leg
+  // -- LEFT LEG (Foot Planted) --
+  // Thigh goes forward/up
+  // Shin goes down vertical
   ctx.beginPath();
-  ctx.moveTo(0, -40);
-  ctx.lineTo(35, 20); // Foot wide right
+  ctx.moveTo(-5, -20); // Hip
+  ctx.lineTo(-25, -25); // Knee High
+  ctx.lineTo(-30, 15); // Foot Planted
   ctx.stroke();
 
-  // === 3. HAKAMA / FLOWING CLOTH ===
+  // -- HAKAMA (Draping on ground) --
   ctx.fillStyle = inkColor;
-
-  // Left cloth panel (blowing left)
   ctx.beginPath();
-  ctx.moveTo(-5, -40); // Waist
-  ctx.quadraticCurveTo(-50 + wind, -10, -55 + wind * 1.5, 15);
-  ctx.lineTo(-30, 20);
-  ctx.lineTo(-5, -30);
+  ctx.moveTo(0, -25);
+  ctx.quadraticCurveTo(20, -10, 40, 20); // Over right leg
+  ctx.lineTo(10, 20);
+  ctx.lineTo(0, -25);
   ctx.fill();
 
-  // Right cloth panel (blowing right)
   ctx.beginPath();
-  ctx.moveTo(5, -40);
-  ctx.quadraticCurveTo(50 + wind, -10, 55 + wind * 1.5, 15);
-  ctx.lineTo(30, 20);
-  ctx.lineTo(5, -30);
+  ctx.moveTo(0, -25);
+  ctx.quadraticCurveTo(-15, -10, -20, 20); // Draping between legs
+  ctx.lineTo(0, 20);
   ctx.fill();
 
-  // Center drape
+  // -- TORSO (Leaning Forward) --
   ctx.beginPath();
-  ctx.moveTo(-15, -35);
-  ctx.lineTo(-10, 18);
-  ctx.lineTo(10, 18);
-  ctx.lineTo(15, -35);
+  ctx.moveTo(0, -20); // Waist
+  ctx.lineTo(15, -55); // Shoulders (Leaning right/forward)
+  ctx.lineWidth = 18; // Bulkier
+  ctx.stroke();
+
+  // -- RIGHT ARM (Fist on Ground - The "Iron Man" Punch) --
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.moveTo(15, -55); // Right Shoulder
+  ctx.lineTo(15, -20); // Elbow
+  ctx.lineTo(5, 15); // Fist on Ground (Center)
+  ctx.stroke();
+
+  // -- HEAD (Looking Down/Forward) --
+  ctx.beginPath();
+  ctx.arc(12, -65, 11, 0, Math.PI * 2);
   ctx.fill();
 
-  // === 4. TORSO (Back View - Broad Shoulders) ===
+  // Bun
   ctx.beginPath();
-  ctx.moveTo(0, -40); // Waist center
-  ctx.lineTo(-25, -100); // Left shoulder
-  ctx.quadraticCurveTo(0, -110, 25, -100); // Neck curve
-  ctx.lineTo(0, -40);
+  ctx.ellipse(8, -75, 5, 4, -0.5, 0, Math.PI * 2);
   ctx.fill();
 
-  // === 5. HEAD (Top Knot / Ponytail) ===
-  ctx.beginPath();
-  ctx.arc(0, -115, 12, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Top knot bun
-  ctx.beginPath();
-  ctx.ellipse(0, -130, 6, 5, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Hair strands blowing
+  // Ribbon Blowing Up/Forward implies force/wind
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(5, -125);
-  ctx.quadraticCurveTo(20 + windFast, -135, 35 + windFast * 2, -125 + Math.sin(time) * 3);
+  ctx.moveTo(8, -75);
+  ctx.quadraticCurveTo(0 + windFast, -100, -10 + wind * 2, -110 + Math.sin(time) * 5);
   ctx.stroke();
 
-  ctx.beginPath();
-  ctx.moveTo(3, -128);
-  ctx.quadraticCurveTo(15 + windFast, -140, 28 + windFast * 1.5, -130);
-  ctx.stroke();
 
-  // === GLOWING EYES ===
-  const eyeGlow = 0.7 + Math.sin(time * 2) * 0.3; // Pulsing glow
-
-  // Eye glow aura
-  ctx.shadowColor = '#ff6600';
-  ctx.shadowBlur = 15 * eyeGlow;
-
-  // Left Eye
-  ctx.fillStyle = `rgba(255, 150, 50, ${eyeGlow})`;
-  ctx.beginPath();
-  ctx.ellipse(-6, -118, 4, 2, -0.2, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Right Eye
-  ctx.beginPath();
-  ctx.ellipse(6, -118, 4, 2, 0.2, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Eye core (brighter center)
-  ctx.fillStyle = `rgba(255, 220, 150, ${eyeGlow})`;
-  ctx.beginPath();
-  ctx.ellipse(-6, -118, 2, 1, -0.2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(6, -118, 2, 1, 0.2, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Reset shadow
-  ctx.shadowBlur = 0;
-
-  // === 6. ARMS ===
+  // -- LEFT ARM (Flung Back for Balance) --
   ctx.lineWidth = 10;
-
-  // Left Arm (holding sword, relaxed down)
   ctx.beginPath();
-  ctx.moveTo(-25, -100); // Shoulder
-  ctx.lineTo(-30, -70); // Elbow
-  ctx.lineTo(-25, -45); // Hand at hip level
+  ctx.moveTo(8, -55); // Left Shoulder
+  ctx.lineTo(-20, -65); // Elbow Back
+  ctx.lineTo(-45, -80); // Hand High Back
   ctx.stroke();
 
-  // Right Arm (relaxed at side)
+  // -- SWORD (Held in Left Hand, Pointing Back) --
+  ctx.save();
+  ctx.translate(-45, -80);
+  ctx.rotate(-0.5); // Angled Up/Back
+
+  // Hilt
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 6;
   ctx.beginPath();
-  ctx.moveTo(25, -100);
-  ctx.lineTo(30, -70);
-  ctx.lineTo(28, -50);
+  ctx.moveTo(0, 0);
+  ctx.lineTo(-15, 5);
   ctx.stroke();
 
-  // === 7. SWORD (Long Katana pointing down) ===
   // Blade
   ctx.strokeStyle = '#111';
   ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.moveTo(-25, -45); // Hand position
-  ctx.lineTo(-60, 25); // Tip at ground, angled left
+  ctx.moveTo(0, 0);
+  ctx.lineTo(70, -25); // Long blade extending back
   ctx.stroke();
+  ctx.restore();
 
-  // Hilt (above hand)
-  ctx.strokeStyle = '#222';
-  ctx.lineWidth = 6;
+  // -- GLOWING EYE (One eye visible or reflection) --
+  const eyeGlow = 0.6 + Math.sin(time * 3) * 0.4;
+  ctx.fillStyle = `rgba(255, 100, 50, ${eyeGlow})`;
+  ctx.shadowColor = '#ff4400';
+  ctx.shadowBlur = 10;
   ctx.beginPath();
-  ctx.moveTo(-25, -45);
-  ctx.lineTo(-22, -60); // Short hilt going up
-  ctx.stroke();
-
-  // === 8. SCABBARD ON BACK ===
-  ctx.strokeStyle = '#1a1a1a';
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.moveTo(20, -95); // Right shoulder
-  ctx.lineTo(-10, -50); // Left hip
-  ctx.stroke();
+  ctx.arc(15, -62, 2, 0, Math.PI * 2); // Visible eye
+  ctx.fill();
+  ctx.shadowBlur = 0;
 
   ctx.restore();
 }
